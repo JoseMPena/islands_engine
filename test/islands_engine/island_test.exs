@@ -80,7 +80,6 @@ defmodule IslandsEngine.IslandTest do
     test "it tells when an island is not forested" do
       {:ok, dot_coordinate} = Coordinate.new(4, 4)
       {:ok, dot} = Island.new(:dot, dot_coordinate)
-      {:ok, coordinate} = Coordinate.new(2, 4)
 
       assert not Island.forested?(dot)
     end
