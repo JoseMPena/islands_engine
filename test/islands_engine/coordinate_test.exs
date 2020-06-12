@@ -1,4 +1,4 @@
-defmodule IslandsEngine.Test do
+defmodule IslandsEngine.CoordinateTest do
   use ExUnit.Case
   doctest IslandsEngine.Coordinate
   alias IslandsEngine.Coordinate
