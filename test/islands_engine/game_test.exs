@@ -113,12 +113,13 @@ defmodule IslandsEngine.GameTest do
       Game.add_player(game, "Marina")
       Game.position_island(game, :player1, :dot, 1, 1)
       Game.position_island(game, :player2, :square, 1, 1)
-      state_data = :sys.get_state(game)
-      state_data = :sys.replace_state(game, fn _data ->
+      via = Game.via_tuple("Jose")
+      state_data = :sys.get_state(via)
+      :sys.replace_state(via, fn _data ->
         %{state_data | rules: %Rules{state: :player1_turn}}
       end)
 
-      [game: game, state: state_data]
+      [game: game]
     end
 
     test "responds with miss data structure when missing a guess", %{game: game} do
@@ -130,8 +131,18 @@ defmodule IslandsEngine.GameTest do
       assert :error = Game.guess_coordinate(game, :player1, 3, 1)
     end
 
-    test "win the game when all islands are correctly guessed" do
+    test "win the game when all islands are correctly guessed", %{game: game} do
+      Game.guess_coordinate(game, :player1, 5, 5)
       assert {:hit, :dot, :win} = Game.guess_coordinate(game, :player2, 1, 1)
+    end
+  end
+
+  describe "named process" do
+    test "can name the spawn processes using :via" do
+      Game.start_link("Pedro")
+      via_info = Game.via_tuple("Pedro")
+      game_state = :sys.get_state(via_info)
+      assert Enum.all?([:player1, :player2, :rules], &(Map.has_key?(game_state, &1)))
     end
   end
 end

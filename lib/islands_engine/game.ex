@@ -8,7 +8,7 @@ defmodule IslandsEngine.Game do
   # API
   @spec start_link(binary) :: any
   def start_link(name) when is_binary(name) do
-    GenServer.start_link(__MODULE__, name, [])
+    GenServer.start_link(__MODULE__, name, name: via_tuple(name))
   end
 
   @spec add_player(atom | pid | {atom, any} | {:via, atom, any}, binary) :: any
@@ -41,6 +41,9 @@ defmodule IslandsEngine.Game do
   def guess_coordinate(game, player, row, col) when player in @players do
     GenServer.call(game, {:guess_coordinate, player, row, col})
   end
+
+  @spec via_tuple(any) :: {:via, Registry, {Registry.Game, any}}
+  def via_tuple(name), do: {:via, Registry, {Registry.Game, name}}
 
   # Server
 
