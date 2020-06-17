@@ -1,9 +1,12 @@
 defmodule IslandsEngine.Game do
-  use GenServer
+  use GenServer,
+    start: {__MODULE__, :start_link, []},
+    restart: :transient
 
   alias IslandsEngine.{Board, Coordinate, Guesses, Island, Rules}
 
   @players [:player1, :player2]
+  @timeout 24 * 60 * 60 * 1000
 
   # API
   @spec start_link(binary) :: any
@@ -46,23 +49,26 @@ defmodule IslandsEngine.Game do
   def via_tuple(name), do: {:via, Registry, {Registry.Game, name}}
 
   # Server
-
   @spec init(any) ::
           {:ok,
            %{
              player1: %{board: map, guesses: map, name: any},
              player2: %{board: map, guesses: map, name: any},
              rules: IslandsEngine.Rules.t()
-           }}
+           }, 15000}
   def init(name) do
     player1 = init_player(name)
     player2 = init_player(nil)
-    {:ok, %{player1: player1, player2: player2, rules: %Rules{}}}
+    {:ok, %{player1: player1, player2: player2, rules: %Rules{}}, @timeout}
   end
 
   def handle_info(:first, state) do
     IO.puts("this message has been handled by handle_info/2")
     {:noreply, state}
+  end
+
+  def handle_info(:timeout, state) do
+    {:stop, {:shutdown, :timeout}, state}
   end
 
   def handle_call({:add_player, name}, _from, state) do
@@ -141,7 +147,7 @@ defmodule IslandsEngine.Game do
 
   defp update_rules(state, rules), do: %{state | rules: rules}
 
-  defp reply_success(state, reply), do: {:reply, reply, state}
+  defp reply_success(state, reply), do: {:reply, reply, state, @timeout}
 
   defp player_board(state, player), do: Map.get(state, player).board
 
