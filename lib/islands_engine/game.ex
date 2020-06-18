@@ -55,11 +55,10 @@ defmodule IslandsEngine.Game do
              player1: %{board: map, guesses: map, name: any},
              player2: %{board: map, guesses: map, name: any},
              rules: IslandsEngine.Rules.t()
-           }, 15000}
+           }}
   def init(name) do
-    player1 = init_player(name)
-    player2 = init_player(nil)
-    {:ok, %{player1: player1, player2: player2, rules: %Rules{}}, @timeout}
+    send(self(), {:set_state, name})
+    {:ok, fresh_state(name)}
   end
 
   def handle_info(:first, state) do
@@ -69,6 +68,17 @@ defmodule IslandsEngine.Game do
 
   def handle_info(:timeout, state) do
     {:stop, {:shutdown, :timeout}, state}
+  end
+
+  def handle_info({:set_state, name}, _state) do
+    state =
+      case :ets.lookup(:game_state, name) do
+        [] -> fresh_state(name)
+        [{_key, state}] -> state
+      end
+
+    :ets.insert(:game_state, {name, state})
+    {:noreply, state, @timeout}
   end
 
   def handle_call({:add_player, name}, _from, state) do
@@ -133,6 +143,13 @@ defmodule IslandsEngine.Game do
     end
   end
 
+  def terminate({:shutdown, :timeout}, state) do
+    :ets.delete(:game_state, state.player1.name)
+    :ok
+  end
+
+  def terminate(_reason, _state), do: :ok
+
   # Support funcs
 
   defp init_player(name) do
@@ -147,7 +164,10 @@ defmodule IslandsEngine.Game do
 
   defp update_rules(state, rules), do: %{state | rules: rules}
 
-  defp reply_success(state, reply), do: {:reply, reply, state, @timeout}
+  defp reply_success(state, reply) do
+    :ets.insert(:game_state, {state.player1.name, state})
+    {:reply, reply, state, @timeout}
+  end
 
   defp player_board(state, player), do: Map.get(state, player).board
 
@@ -164,5 +184,11 @@ defmodule IslandsEngine.Game do
     update_in(state_data[player_key].guesses, fn guesses ->
       Guesses.add(guesses, hit_or_miss, coordinate)
     end)
+  end
+
+  defp fresh_state(name) do
+    player1 = init_player(name)
+    player2 = init_player(nil)
+    %{player1: player1, player2: player2, rules: %Rules{}}
   end
 end

@@ -13,6 +13,10 @@ defmodule IslandsEngine.Application do
       IslandsEngine.GameSupervisor
     ]
 
+    # Create the in-memory table :game_state before initializing
+    # any game so that state can be backed up.
+    :ets.new(:game_state, [:public, :named_table])
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: IslandsEngine.Supervisor]

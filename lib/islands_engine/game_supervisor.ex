@@ -18,6 +18,7 @@ defmodule IslandsEngine.GameSupervisor do
 
   @spec stop_game(any) :: :ok | {:error, :not_found}
   def stop_game(name) do
+    :ets.delete(:game_state, name)
     DynamicSupervisor.terminate_child(__MODULE__, pid_from_name(name))
   end
 
